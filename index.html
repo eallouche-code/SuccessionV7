@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Patrimonial — Patrimy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --green:#1a6b4a;
+    --green-dark:#0f4a33;
+    --green-soft:#e8f0eb;
+    --cream:#faf7f1;
+    --card:#ffffff;
+    --border:#e7e0d3;
+    --gold:#c4923e;
+    --gold-soft:#f7eede;
+    --ink:#1c2620;
+    --muted:#6b7a72;
+    --red:#b5482f;
+    --red-soft:#f7e8e3;
+    --shadow:0 1px 2px rgba(15,74,51,.04),0 8px 24px rgba(15,74,51,.06);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Inter',sans-serif;
+    background:var(--cream);
+    color:var(--ink);
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1280px;margin:0 auto;padding:32px 24px 80px}
+
+  /* Header */
+  header{margin-bottom:28px}
+  .eyebrow{
+    font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--green);display:flex;align-items:center;gap:10px;margin-bottom:10px;
+  }
+  .eyebrow::before{content:"";width:28px;height:2px;background:var(--gold)}
+  h1{font-family:'DM Serif Display',serif;font-size:38px;line-height:1.08;font-weight:400;letter-spacing:-.01em}
+  .sub{color:var(--muted);font-size:15px;margin-top:8px;max-width:620px}
+
+  /* Layout */
+  .grid{display:grid;grid-template-columns:1fr 420px;gap:28px;align-items:start}
+  @media(max-width:980px){.grid{grid-template-columns:1fr}}
+
+  /* Cards */
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);overflow:hidden}
+  .card + .card{margin-top:20px}
+  .card-head{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+  .card-num{
+    font-family:'DM Serif Display',serif;font-size:18px;color:var(--green);
+    width:34px;height:34px;border-radius:9px;background:var(--green-soft);
+    display:grid;place-items:center;flex-shrink:0
+  }
+  .card-title{font-weight:600;font-size:16px}
+  .card-title small{display:block;font-weight:400;color:var(--muted);font-size:12.5px;margin-top:1px}
+  .card-body{padding:20px 22px}
+
+  /* Form */
+  .field{margin-bottom:16px}
+  .field:last-child{margin-bottom:0}
+  label{display:block;font-size:13px;font-weight:500;color:var(--ink);margin-bottom:6px}
+  label .hint{color:var(--muted);font-weight:400}
+  input[type=number],input[type=text],select{
+    width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;
+    font-family:inherit;font-size:14px;color:var(--ink);background:#fff;transition:border-color .15s,box-shadow .15s
+  }
+  input:focus,select:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px var(--green-soft)}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  @media(max-width:520px){.row,.row-3{grid-template-columns:1fr}}
+  .suffix{position:relative}
+  .suffix span{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;pointer-events:none}
+  .suffix input{padding-right:32px}
+
+  /* Segmented control */
+  .seg{display:flex;flex-wrap:wrap;gap:6px}
+  .seg button{
+    flex:1;min-width:fit-content;padding:9px 12px;border:1px solid var(--border);background:#fff;border-radius:9px;
+    font-family:inherit;font-size:13px;color:var(--muted);cursor:pointer;transition:all .15s;font-weight:500
+  }
+  .seg button:hover{border-color:var(--green);color:var(--green)}
+  .seg button.active{background:var(--green);border-color:var(--green);color:#fff}
+
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:2px 0}
+  .switch{position:relative;width:44px;height:25px;flex-shrink:0}
+  .switch input{opacity:0;width:0;height:0}
+  .slider{position:absolute;inset:0;background:var(--border);border-radius:20px;cursor:pointer;transition:.2s}
+  .slider::before{content:"";position:absolute;height:19px;width:19px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+  .switch input:checked + .slider{background:var(--green)}
+  .switch input:checked + .slider::before{transform:translateX(19px)}
+
+  .note{font-size:12.5px;color:var(--muted);background:var(--cream);border:1px solid var(--border);border-radius:9px;padding:9px 12px;margin-top:12px}
+
+  /* Results panel */
+  .panel{position:sticky;top:24px}
+  @media(max-width:980px){.panel{position:static}}
+  .result-card{background:linear-gradient(160deg,var(--green-dark),var(--green));border-radius:16px;color:#fff;padding:24px;box-shadow:0 12px 30px rgba(15,74,51,.18)}
+  .result-card .lab{font-size:12px;letter-spacing:.1em;text-transform:uppercase;opacity:.75;font-weight:600}
+  .big-num{font-family:'DM Serif Display',serif;font-size:42px;line-height:1;margin:8px 0 4px}
+  .result-card .ctx{font-size:13px;opacity:.85}
+  .breakdown{margin-top:20px;border-top:1px solid rgba(255,255,255,.18);padding-top:16px;display:flex;flex-direction:column;gap:10px}
+  .brk{display:flex;justify-content:space-between;align-items:baseline;font-size:13.5px}
+  .brk .v{font-weight:600;font-variant-numeric:tabular-nums}
+  .brk.muted{opacity:.78;font-size:12.5px}
+
+  /* Recommendations */
+  .reco-head{display:flex;align-items:center;gap:10px;margin:24px 0 14px}
+  .reco-head h2{font-family:'DM Serif Display',serif;font-size:22px;font-weight:400}
+  .reco-head .badge{background:var(--gold-soft);color:var(--gold);font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;letter-spacing:.04em}
+  .reco{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:12px;padding:16px 18px;margin-bottom:12px;box-shadow:var(--shadow)}
+  .reco h3{font-size:15px;font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+  .reco h3 .pri{font-size:10px;font-weight:700;color:#fff;background:var(--green);padding:2px 7px;border-radius:6px;letter-spacing:.05em}
+  .reco p{font-size:13.5px;color:var(--muted);margin-bottom:8px}
+  .reco .gain{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--green);background:var(--green-soft);padding:5px 10px;border-radius:8px}
+  .reco-empty{background:var(--card);border:1px dashed var(--border);border-radius:12px;padding:22px;text-align:center;color:var(--muted);font-size:13.5px}
+
+  .disclaimer{font-size:11.5px;color:var(--muted);margin-top:18px;line-height:1.55;padding:14px 16px;background:var(--card);border:1px solid var(--border);border-radius:10px}
+  .footer{margin-top:36px;padding-top:20px;border-top:1px solid var(--border);font-size:12px;color:var(--muted);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+  .brand{font-family:'DM Serif Display',serif;color:var(--green)}
+  .hidden{display:none!important}
+
+  /* PDF button */
+  .pdf-btn{
+    width:100%;margin-top:14px;padding:12px 16px;border:1px solid var(--green);background:#fff;color:var(--green);
+    border-radius:10px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;gap:8px;transition:all .15s
+  }
+  .pdf-btn:hover{background:var(--green);color:#fff}
+  .pdf-btn svg{width:16px;height:16px}
+
+  /* Print-only area */
+  #print-area{display:none}
+  @media print{
+    @page{margin:16mm}
+    body{background:#fff}
+    .wrap > header,.grid,.footer{display:none!important}
+    #print-area{display:block!important}
+    .p-head{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid var(--green);padding-bottom:12px;margin-bottom:20px}
+    .p-head h1{font-family:'DM Serif Display',serif;font-size:26px;font-weight:400;color:var(--ink)}
+    .p-head .p-brand{font-family:'DM Serif Display',serif;font-size:20px;color:var(--green)}
+    .p-head .p-date{font-size:12px;color:var(--muted);display:block;text-align:right;margin-top:2px}
+    .p-sec-title{font-family:'DM Serif Display',serif;font-size:16px;color:var(--green);margin:18px 0 8px}
+    .p-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 24px;font-size:12.5px}
+    .p-line{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dotted var(--border)}
+    .p-line .pl-lab{color:var(--muted)}
+    .p-line .pl-val{font-weight:600}
+    .p-total{background:var(--green-soft);border-radius:10px;padding:14px 18px;margin:14px 0;display:flex;justify-content:space-between;align-items:center}
+    .p-total .pt-lab{font-size:13px;color:var(--green-dark);font-weight:600}
+    .p-total .pt-val{font-family:'DM Serif Display',serif;font-size:26px;color:var(--green-dark)}
+    .p-reco{border-left:3px solid var(--gold);padding:8px 0 8px 14px;margin:10px 0;page-break-inside:avoid}
+    .p-reco h4{font-size:13.5px;margin-bottom:3px}
+    .p-reco p{font-size:12px;color:var(--muted)}
+    .p-reco .pr-gain{font-size:12px;color:var(--green);font-weight:600;margin-top:3px}
+    .p-disc{font-size:10.5px;color:var(--muted);margin-top:24px;padding-top:12px;border-top:1px solid var(--border)}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Patrimy · Outil conseiller</div>
+    <h1>Simulateur de transmission patrimoniale</h1>
+    <p class="sub">Saisissez la situation du client. Le simulateur estime les droits de succession en l'état et propose les prochaines étapes d'optimisation les plus pertinentes.</p>
+  </header>
+
+  <div class="grid">
+    <!-- ============ COLONNE SAISIE ============ -->
+    <div class="inputs">
+
+      <!-- 1. Situation -->
+      <div class="card">
+        <div class="card-head"><div class="card-num">1</div><div class="card-title">Situation familiale<small>Statut conjugal et âge du client</small></div></div>
+        <div class="card-body">
+          <div class="field">
+            <label>Statut conjugal</label>
+            <div class="seg" id="seg-statut">
+              <button data-v="marie" class="active">Marié</button>
+              <button data-v="pacs">Pacsé</button>
+              <button data-v="celib">Célibataire</button>
+              <button data-v="veuf">Veuf</button>
+            </div>
+          </div>
+          <div class="row">
+            <div class="field"><label>Âge du client</label><div class="suffix"><input type="number" id="age" value="60" min="18" max="105"><span>ans</span></div></div>
+            <div class="field" id="f-age-conj"><label>Âge du conjoint</label><div class="suffix"><input type="number" id="ageConj" value="58" min="18" max="105"><span>ans</span></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Régime matrimonial -->
+      <div class="card" id="card-regime">
+        <div class="card-head"><div class="card-num">2</div><div class="card-title">Régime matrimonial<small>Détermine la masse successorale au décès</small></div></div>
+        <div class="card-body">
+          <div class="field">
+            <label>Régime</label>
+            <div class="seg" id="seg-regime" style="flex-direction:column">
+              <button data-v="legale" class="active">Communauté réduite aux acquêts (légal)</button>
+              <button data-v="separation">Séparation de biens</button>
+              <button data-v="universelle">Communauté universelle</button>
+              <button data-v="participation">Participation aux acquêts</button>
+            </div>
+          </div>
+          <div class="field" id="f-attribution">
+            <div class="toggle-row">
+              <label style="margin:0">Clause d'attribution intégrale <span class="hint">(tout au conjoint au 1er décès)</span></label>
+              <label class="switch"><input type="checkbox" id="attribution"><span class="slider"></span></label>
+            </div>
+          </div>
+          <div class="field">
+            <div class="toggle-row">
+              <label style="margin:0">Donation au dernier vivant en place</label>
+              <label class="switch"><input type="checkbox" id="ddv"><span class="slider"></span></label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Enfants -->
+      <div class="card">
+        <div class="card-head"><div class="card-num">3</div><div class="card-title">Enfants<small>Héritiers réservataires</small></div></div>
+        <div class="card-body">
+          <div class="row">
+            <div class="field"><label>Enfants communs</label><input type="number" id="enfComm" value="2" min="0" max="12"></div>
+            <div class="field"><label>Enfants d'une autre union</label><input type="number" id="enfAutre" value="0" min="0" max="12"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Patrimoine -->
+      <div class="card">
+        <div class="card-head"><div class="card-num">4</div><div class="card-title">Patrimoine<small>Valeurs nettes estimées du foyer</small></div></div>
+        <div class="card-body">
+          <div class="field"><label>Résidence principale</label><div class="suffix"><input type="number" id="rp" value="600000" min="0" step="10000"><span>€</span></div></div>
+          <div class="field"><label>Immobilier locatif / secondaire</label><div class="suffix"><input type="number" id="immoLoc" value="400000" min="0" step="10000"><span>€</span></div></div>
+          <div class="row">
+            <div class="field"><label>Liquidités <span class="hint">(livrets, comptes)</span></label><div class="suffix"><input type="number" id="cash" value="150000" min="0" step="5000"><span>€</span></div></div>
+            <div class="field"><label>Valeurs mobilières <span class="hint">(PEA, CTO)</span></label><div class="suffix"><input type="number" id="vm" value="100000" min="0" step="5000"><span>€</span></div></div>
+          </div>
+          <div class="field"><label>Entreprise détenue <span class="hint">(parts de société, fonds de commerce)</span></label><div class="suffix"><input type="number" id="entreprise" value="0" min="0" step="10000"><span>€</span></div></div>
+          <div class="field"><label>Dettes / passif <span class="hint">(capital restant dû)</span></label><div class="suffix"><input type="number" id="dettes" value="0" min="0" step="10000"><span>€</span></div></div>
+        </div>
+      </div>
+
+      <!-- 5. Assurance vie -->
+      <div class="card">
+        <div class="card-head"><div class="card-num">5</div><div class="card-title">Assurance vie<small>Hors succession — fiscalité propre</small></div></div>
+        <div class="card-body">
+          <div class="row">
+            <div class="field"><label>Primes versées avant 70 ans</label><div class="suffix"><input type="number" id="avAvant" value="0" min="0" step="10000"><span>€</span></div></div>
+            <div class="field"><label>Primes versées après 70 ans</label><div class="suffix"><input type="number" id="avApres" value="0" min="0" step="10000"><span>€</span></div></div>
+          </div>
+          <div class="note">L'assurance vie est transmise hors succession. Avant 70 ans : abattement de 152 500 € par bénéficiaire. Après 70 ans : abattement global de 30 500 €.</div>
+        </div>
+      </div>
+
+      <!-- 6. PER -->
+      <div class="card">
+        <div class="card-head"><div class="card-num">6</div><div class="card-title">Plan d'Épargne Retraite (PER)<small>Fiscalité au décès selon le type et l'âge</small></div></div>
+        <div class="card-body">
+          <div class="field"><label>Encours du PER</label><div class="suffix"><input type="number" id="per" value="0" min="0" step="10000"><span>€</span></div></div>
+          <div class="field">
+            <label>Type de PER</label>
+            <div class="seg" id="seg-per-type">
+              <button data-v="assurantiel" class="active">Assurantiel</button>
+              <button data-v="bancaire">Bancaire (compte-titres)</button>
+            </div>
+          </div>
+          <div class="field" id="f-per-age">
+            <label>Hypothèse de décès <span class="hint">(c'est l'âge au décès qui déclenche la fiscalité, pas l'âge au versement)</span></label>
+            <div class="seg" id="seg-per-age">
+              <button data-v="avant70" class="active">Avant 70 ans</button>
+              <button data-v="apres70">Après 70 ans</button>
+            </div>
+          </div>
+          <div class="note">PER <b>assurantiel</b> : transmis hors succession, comme l'assurance vie (abattement 152 500 € / bénéficiaire si décès avant 70 ans ; 30 500 € global après 70 ans). PER <b>bancaire</b> : réintégré dans la succession et taxé au barème classique.</div>
+        </div>
+      </div>
+
+      <!-- 7. Donations passées -->
+      <div class="card">
+        <div class="card-head"><div class="card-num">7</div><div class="card-title">Donations déjà réalisées<small>Abattement consommé sur les 15 dernières années</small></div></div>
+        <div class="card-body">
+          <div class="field"><label>Montant déjà donné par enfant <span class="hint">(sur le cycle de 15 ans en cours)</span></label><div class="suffix"><input type="number" id="dejaDon" value="0" min="0" step="10000"><span>€</span></div></div>
+          <div class="note">L'abattement parent/enfant est de 100 000 € et se recharge tous les 15 ans. Ce champ réduit l'abattement encore disponible.</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ============ COLONNE RÉSULTATS ============ -->
+    <div class="panel">
+      <div class="result-card">
+        <div class="lab">Droits de succession estimés</div>
+        <div class="big-num" id="r-total">—</div>
+        <div class="ctx" id="r-ctx">Au décès du client, en l'état actuel</div>
+        <div class="breakdown" id="r-breakdown"></div>
+      </div>
+
+      <div class="reco-head">
+        <h2>Prochaines étapes</h2>
+        <span class="badge" id="reco-count">—</span>
+      </div>
+      <div id="reco-list"></div>
+
+      <button class="pdf-btn" id="pdf-btn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Télécharger en PDF
+      </button>
+
+      <div class="disclaimer">
+        Estimation indicative basée sur le barème en ligne directe et les abattements en vigueur. Les calculs simplifient certaines règles (droits du conjoint, répartition propre/commun, plus-values latentes). À valider par une étude patrimoniale complète et l'avis d'un notaire avant toute décision.
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>Simulateur patrimonial · usage conseiller interne</span>
+    <span class="brand">Patrimy</span>
+  </div>
+</div>
+
+<!-- Zone d'impression PDF (générée dynamiquement) -->
+<div id="print-area"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+(function(){
+  "use strict";
+  // ---------- State ----------
+  var state={statut:"marie",regime:"legale",perType:"assurantiel",perAge:"avant70"};
+  var lastData=null;
+
+  // ---------- Helpers ----------
+  function $(id){return document.getElementById(id)}
+  function n(id){var v=parseFloat($(id).value);return isNaN(v)?0:Math.max(0,v)}
+  function eur(x){return Math.round(x).toLocaleString("fr-FR")+" €"}
+
+  // Barème ligne directe (donation = succession)
+  function droitsLigneDirecte(base){
+    if(base<=0)return 0;
+    var t=[[8072,.05],[12109,.10],[15932,.15],[552324,.20],[902838,.30],[1805677,.40],[Infinity,.45]];
+    var prev=0,d=0;
+    for(var i=0;i<t.length;i++){
+      var cap=t[i][0],rate=t[i][1];
+      if(base>prev){d+=(Math.min(base,cap)-prev)*rate;prev=cap;}else break;
+    }
+    return d;
+  }
+  // Valeur nue-propriété selon âge (art. 669 CGI)
+  function partNP(age){
+    if(age<21)return .10;if(age<=30)return .20;if(age<=40)return .30;if(age<=50)return .40;
+    if(age<=60)return .50;if(age<=70)return .60;if(age<=80)return .70;if(age<=90)return .80;return .90;
+  }
+  // Droits sur capitaux décès AV/PER assurantiel — primes avant 70 ans (art. 990 I)
+  function droitsAV70(total,benef){
+    if(total<=0||benef<=0)return 0;
+    var parB=total/benef, taxable=Math.max(0,parB-152500), d=0;
+    d+=Math.min(taxable,700000)*0.20;
+    if(taxable>700000)d+=(taxable-700000)*0.3125;
+    return d*benef;
+  }
+
+  // ---------- Calcul principal ----------
+  function compute(){
+    var age=n("age"), marie=(state.statut==="marie"||state.statut==="pacs");
+    var enfComm=Math.round(n("enfComm")), enfAutre=Math.round(n("enfAutre"));
+    var nbEnf=enfComm+enfAutre;
+
+    var rp=n("rp"),immoLoc=n("immoLoc"),cash=n("cash"),vm=n("vm"),entreprise=n("entreprise"),dettes=n("dettes");
+    var patrimoineFoyer=rp+immoLoc+cash+vm+entreprise-dettes;
+    if(patrimoineFoyer<0)patrimoineFoyer=0;
+
+    // PER : routage selon type et hypothèse d'âge au décès
+    var per=n("per");
+    var perBancaire=(state.perType==="bancaire")?per:0;
+    var perAvant=(state.perType==="assurantiel"&&state.perAge==="avant70")?per:0;
+    var perApres=(state.perType==="assurantiel"&&state.perAge==="apres70")?per:0;
+
+    // Masse successorale du client selon régime
+    var masse, regimeNote;
+    if(!marie){
+      masse=patrimoineFoyer; regimeNote="Patrimoine personnel du client";
+    } else if(state.regime==="separation"){
+      masse=patrimoineFoyer*0.5; regimeNote="Biens propres du client (estimés à 50%)";
+    } else if(state.regime==="universelle"){
+      if($("attribution").checked){masse=0;regimeNote="Attribution intégrale → 0 € taxé au 1er décès";}
+      else{masse=patrimoineFoyer*0.5;regimeNote="50% de la communauté universelle";}
+    } else if(state.regime==="participation"){
+      masse=patrimoineFoyer*0.5; regimeNote="Acquêts du client (estimés à 50%)";
+    } else { // légale
+      masse=patrimoineFoyer*0.5; regimeNote="Biens propres + 50% de la communauté";
+    }
+
+    // Le PER bancaire est un contrat individuel (bien propre) → réintégré en totalité dans la succession du client
+    masse += perBancaire;
+
+    // Part du conjoint (exonérée). Défaut 1/4 PP en présence d'enfants.
+    var partConjoint=0;
+    if(marie && masse>0){ partConjoint = nbEnf>0 ? masse*0.25 : masse; }
+    var masseEnfants = masse - partConjoint;
+    if(masseEnfants<0)masseEnfants=0;
+
+    // Droits des enfants
+    var dejaDon=n("dejaDon");
+    var abatDispo=Math.max(0,100000-dejaDon);
+    var droitsEnfants=0, baseParEnfant=0;
+    if(nbEnf>0 && masseEnfants>0){
+      var partEnf=masseEnfants/nbEnf;
+      baseParEnfant=Math.max(0,partEnf-abatDispo);
+      droitsEnfants=droitsLigneDirecte(baseParEnfant)*nbEnf;
+    }
+
+    // Assurance vie + PER assurantiel — primes/encours avant 70 ans (art. 990 I)
+    var avApres=n("avApres"), avAvant=n("avAvant");
+    var totalAvant=avAvant+perAvant;
+    var totalApres=avApres+perApres;
+    var droitsAVavant=droitsAV70(totalAvant,Math.max(1,nbEnf));
+    // après 70 ans : abattement global 30 500 € puis barème ligne directe (art. 757 B)
+    var droitsAVapres=0;
+    if(totalApres>30500 && nbEnf>0){
+      droitsAVapres=droitsLigneDirecte((totalApres-30500)/nbEnf)*nbEnf;
+    }
+    var droitsAV=droitsAVavant+droitsAVapres;
+
+    var totalDroits=droitsEnfants+droitsAV;
+
+    // ---------- Affichage résultat ----------
+    $("r-total").textContent = eur(totalDroits);
+    var br=$("r-breakdown");br.innerHTML="";
+    function addBrk(l,v,cls){var d=document.createElement("div");d.className="brk"+(cls?" "+cls:"");d.innerHTML='<span>'+l+'</span><span class="v">'+v+'</span>';br.appendChild(d);}
+    addBrk("Patrimoine net du foyer",eur(patrimoineFoyer),"muted");
+    addBrk("Masse successorale du client",eur(masse));
+    if(marie&&partConjoint>0)addBrk("Part conjoint (exonérée)","− "+eur(partConjoint),"muted");
+    addBrk(nbEnf>0?"Part taxable / enfant":"Aucun héritier en ligne directe",nbEnf>0?eur(masseEnfants/nbEnf):"—","muted");
+    addBrk("Abattement disponible / enfant",eur(abatDispo),"muted");
+    if(perBancaire>0)addBrk("Dont PER bancaire (dans succession)",eur(perBancaire),"muted");
+    if(droitsAV>0)addBrk("Dont droits AV / PER assurantiel",eur(droitsAV),"muted");
+
+    // ---------- Moteur de recommandations ----------
+    var recos=[];
+
+    // R: PACS sans testament
+    if(state.statut==="pacs"){
+      recos.push({pri:10,t:"Rédiger un testament en faveur du partenaire",
+        p:"Le partenaire de PACS est exonéré de droits mais n'hérite de RIEN sans testament : il n'est pas héritier légal. Un testament est indispensable pour lui transmettre tout ou partie du patrimoine.",gain:null});
+    }
+
+    // R: Pacte Dutreil
+    if(entreprise>=200000){
+      var sansDutreil=droitsLigneDirecte(Math.max(0,(entreprise*(marie?.5:1))/Math.max(1,nbEnf)-abatDispo))*Math.max(1,nbEnf);
+      var avecDutreil=droitsLigneDirecte(Math.max(0,(entreprise*0.25*(marie?.5:1))/Math.max(1,nbEnf)-abatDispo))*Math.max(1,nbEnf);
+      recos.push({pri:9,t:"Mettre en place un Pacte Dutreil sur l'entreprise",
+        p:"L'entreprise représente "+eur(entreprise)+". Un engagement Dutreil exonère 75% de sa valeur des droits de transmission.",
+        gain:nbEnf>0?(sansDutreil-avecDutreil):0});
+    }
+
+    // R: Démembrement immobilier (client < 71, immo conséquent)
+    var immoTransmissible=immoLoc + (rp*0.0); // on cible le locatif/secondaire en priorité
+    if(age<=70 && immoLoc>=150000 && nbEnf>0){
+      var partImmo=immoLoc*(marie?.5:1); // part client
+      // succession actuelle sur cet immo
+      var droitsSucc=droitsLigneDirecte(Math.max(0,partImmo/nbEnf-abatDispo))*nbEnf;
+      // donation NP aujourd'hui
+      var np=partImmo*partNP(age);
+      var droitsDon=droitsLigneDirecte(Math.max(0,np/nbEnf-abatDispo))*nbEnf;
+      recos.push({pri:8,t:"Donation de la nue-propriété de l'immobilier locatif",
+        p:"À "+age+" ans, la nue-propriété vaut "+(partNP(age)*100)+"% ("+eur(np)+"). Vous conservez l'usufruit et les loyers ; les enfants récupèrent la pleine propriété sans fiscalité au décès.",
+        gain:droitsSucc-droitsDon});
+    }
+
+    // R: Assurance vie sous-utilisée (< 70 ans, liquidités importantes)
+    if(age<70 && (cash+vm)>=100000 && avAvant<100000){
+      var liquTransm=(cash+vm)*(marie?.5:1);
+      var droitsLiqSucc=nbEnf>0?droitsLigneDirecte(Math.max(0,liquTransm/nbEnf-abatDispo))*nbEnf:0;
+      recos.push({pri:7,t:"Alimenter un contrat d'assurance vie avant 70 ans",
+        p:"Vous disposez de "+eur(cash+vm)+" de liquidités. Placées en assurance vie avant 70 ans, elles sortent de la succession avec un abattement de 152 500 € par bénéficiaire.",
+        gain:droitsLiqSucc});
+    }
+
+    // R: Protection conjoint — communauté universelle / attribution
+    if(state.statut==="marie" && state.regime==="legale" && enfAutre===0 && enfComm>0){
+      recos.push({pri:6,t:"Passer en communauté universelle avec attribution intégrale",
+        p:"Avec uniquement des enfants communs, ce changement de régime (après 2 ans de mariage) permet au conjoint survivant de recueillir tout le patrimoine sans droits au 1er décès. À arbitrer : les enfants paieront davantage au 2nd décès.",
+        gain:null});
+    }
+
+    // R: Donation au dernier vivant manquante
+    if(state.statut==="marie" && !$("ddv").checked && state.regime!=="universelle"){
+      recos.push({pri:5,t:"Mettre en place une donation au dernier vivant",
+        p:"Pour ~150 €, elle élargit les droits du conjoint survivant (usufruit total ou quotité disponible en pleine propriété). Essentielle "+(enfAutre>0?"en présence d'enfants d'une autre union, où l'option usufruit total n'est pas automatique.":"pour sécuriser le conjoint."),gain:null});
+    }
+
+    // R: Enfants autre union — vigilance
+    if(enfAutre>0 && state.statut==="marie"){
+      recos.push({pri:4,t:"Sécuriser le conjoint face aux enfants d'une autre union",
+        p:"Les enfants non communs limitent les droits du conjoint (1/4 en pleine propriété, pas d'usufruit total automatique). Combinez assurance vie + donation au dernier vivant pour protéger le conjoint sans léser la réserve.",gain:null});
+    }
+
+    // R: Donation classique pour lancer le cycle 15 ans
+    if(nbEnf>0 && abatDispo>0 && masseEnfants>0 && (masseEnfants/nbEnf)>abatDispo && age<80){
+      recos.push({pri:3,t:"Lancer une donation pour amorcer le cycle de 15 ans",
+        p:"Il reste "+eur(abatDispo)+" d'abattement disponible par enfant. Donner maintenant démarre le compteur des 15 ans : l'abattement se rechargera pour une transmission future exonérée.",
+        gain:droitsLigneDirecte(Math.max(0,(masseEnfants/nbEnf)-abatDispo))-droitsLigneDirecte(Math.max(0,(masseEnfants/nbEnf)))});
+    }
+
+    // Tri par priorité + gain, garder top 2
+    recos.sort(function(a,b){
+      if(b.pri!==a.pri)return b.pri-a.pri;
+      return (b.gain||0)-(a.gain||0);
+    });
+    var top=recos.slice(0,2);
+
+    var list=$("reco-list");list.innerHTML="";
+    $("reco-count").textContent = top.length>0 ? top.length+" identifiée"+(top.length>1?"s":"") : "0";
+
+    if(totalDroits===0 && top.length===0){
+      list.innerHTML='<div class="reco-empty">Aucun droit de succession estimé et pas d\'optimisation prioritaire détectée. La situation semble déjà bien structurée — affinez les paramètres pour explorer des pistes.</div>';
+      return;
+    }
+    if(top.length===0){
+      list.innerHTML='<div class="reco-empty">Renseignez davantage de paramètres pour générer des recommandations.</div>';
+      return;
+    }
+
+    top.forEach(function(r,i){
+      var el=document.createElement("div");el.className="reco";
+      var gainHtml="";
+      if(r.gain && r.gain>500){gainHtml='<div class="gain">↓ Économie estimée : '+eur(r.gain)+'</div>';}
+      el.innerHTML='<h3><span class="pri">'+(i===0?"PRIORITÉ":"PISTE 2")+'</span>'+r.t+'</h3><p>'+r.p+'</p>'+gainHtml;
+      list.appendChild(el);
+    });
+
+    // ---------- Génération de la zone PDF ----------
+    buildPrint({
+      statut:state.statut,regime:state.regime,age:age,ageConj:n("ageConj"),marie:marie,
+      enfComm:enfComm,enfAutre:enfAutre,
+      rp:rp,immoLoc:immoLoc,cash:cash,vm:vm,entreprise:entreprise,dettes:dettes,
+      avAvant:avAvant,avApres:avApres,dejaDon:dejaDon,
+      per:per,perType:state.perType,perAge:state.perAge,perBancaire:perBancaire,
+      patrimoineFoyer:patrimoineFoyer,masse:masse,partConjoint:partConjoint,
+      abatDispo:abatDispo,droitsAV:droitsAV,totalDroits:totalDroits,nbEnf:nbEnf,top:top
+    });
+  }
+
+  // ---------- Construction du PDF ----------
+  function buildPrint(d){
+    lastData=d;
+    var statutLbl={marie:"Marié",pacs:"Pacsé",celib:"Célibataire",veuf:"Veuf"}[d.statut]||d.statut;
+    var regimeLbl={legale:"Communauté réduite aux acquêts",separation:"Séparation de biens",universelle:"Communauté universelle",participation:"Participation aux acquêts"}[d.regime]||"—";
+    var now=new Date().toLocaleDateString("fr-FR",{day:"2-digit",month:"long",year:"numeric"});
+    function line(l,v){return '<div class="p-line"><span class="pl-lab">'+l+'</span><span class="pl-val">'+v+'</span></div>'}
+
+    var profil=line("Statut conjugal",statutLbl);
+    if(d.marie){profil+=line("Régime matrimonial",regimeLbl);}
+    profil+=line("Âge du client",d.age+" ans");
+    if(d.marie){profil+=line("Âge du conjoint",d.ageConj+" ans");}
+    profil+=line("Enfants communs",d.enfComm);
+    if(d.enfAutre>0)profil+=line("Enfants d'une autre union",d.enfAutre);
+
+    var patri=line("Résidence principale",eur(d.rp))
+      +line("Immobilier locatif / secondaire",eur(d.immoLoc))
+      +line("Liquidités",eur(d.cash))
+      +line("Valeurs mobilières",eur(d.vm));
+    if(d.entreprise>0)patri+=line("Entreprise détenue",eur(d.entreprise));
+    if(d.dettes>0)patri+=line("Dettes / passif","− "+eur(d.dettes));
+    if(d.avAvant>0)patri+=line("Assurance vie (avant 70 ans)",eur(d.avAvant));
+    if(d.avApres>0)patri+=line("Assurance vie (après 70 ans)",eur(d.avApres));
+    if(d.per>0){
+      var perLbl=(d.perType==="bancaire")?"PER bancaire":"PER assurantiel ("+(d.perAge==="avant70"?"décès av. 70":"décès ap. 70")+")";
+      patri+=line(perLbl,eur(d.per));
+    }
+    if(d.dejaDon>0)patri+=line("Donations déjà réalisées / enfant",eur(d.dejaDon));
+
+    var calc=line("Patrimoine net du foyer",eur(d.patrimoineFoyer))
+      +line("Masse successorale du client",eur(d.masse));
+    if(d.marie&&d.partConjoint>0)calc+=line("Part conjoint (exonérée)","− "+eur(d.partConjoint));
+    calc+=line("Abattement disponible / enfant",eur(d.abatDispo));
+    if(d.droitsAV>0)calc+=line("Dont droits sur assurance vie",eur(d.droitsAV));
+
+    var recos="";
+    d.top.forEach(function(r,i){
+      var g=(r.gain&&r.gain>500)?'<div class="pr-gain">↓ Économie estimée : '+eur(r.gain)+'</div>':"";
+      recos+='<div class="p-reco"><h4>'+(i===0?"Priorité — ":"Piste 2 — ")+r.t+'</h4><p>'+r.p+'</p>'+g+'</div>';
+    });
+    if(!recos)recos='<p style="font-size:12px;color:#6b7a72">Aucune optimisation prioritaire détectée.</p>';
+
+    $("print-area").innerHTML=
+      '<div class="p-head"><div><h1>Étude de transmission patrimoniale</h1></div>'
+      +'<div><span class="p-brand">Patrimy</span><span class="p-date">'+now+'</span></div></div>'
+      +'<div class="p-sec-title">Profil du client</div><div class="p-grid">'+profil+'</div>'
+      +'<div class="p-sec-title">Patrimoine & dispositifs</div><div class="p-grid">'+patri+'</div>'
+      +'<div class="p-sec-title">Estimation</div><div class="p-grid">'+calc+'</div>'
+      +'<div class="p-total"><span class="pt-lab">Droits de succession estimés au décès du client</span><span class="pt-val">'+eur(d.totalDroits)+'</span></div>'
+      +'<div class="p-sec-title">Prochaines étapes recommandées</div>'+recos
+      +'<div class="p-disc">Estimation indicative en ligne directe basée sur les abattements et barèmes en vigueur. Certaines règles sont simplifiées (répartition propre/commun forfaitisée à 50%, droits du conjoint, plus-values latentes). Document de travail à valider par une étude complète et l\'avis d\'un notaire avant toute décision.</div>';
+  }
+
+  // ---------- Génération PDF (jsPDF) ----------
+  function generatePDF(){
+    var d=lastData;
+    if(!d){return;}
+    if(!(window.jspdf&&window.jspdf.jsPDF)){window.print();return;}
+    var JsPDF=window.jspdf.jsPDF;
+    var doc=new JsPDF({unit:"mm",format:"a4"});
+    var W=210,H=297,M=16,CW=W-2*M,y=M;
+    var GREEN=[26,107,74],DARK=[15,74,33],GOLD=[196,146,62],INK=[28,38,32],MUT=[107,122,114],SOFT=[232,240,235];
+
+    function eurPdf(x){return Math.round(x).toLocaleString("fr-FR").replace(/\u202f|\u00a0/g," ")+" €";}
+    function need(h){if(y+h>H-M){doc.addPage();y=M;}}
+    function sectionTitle(t){need(12);doc.setFont("times","normal");doc.setFontSize(12.5);doc.setTextColor(GREEN[0],GREEN[1],GREEN[2]);doc.text(t,M,y);y+=5.5;}
+    function kv(label,val){need(7);doc.setFont("helvetica","normal");doc.setFontSize(9.5);doc.setTextColor(MUT[0],MUT[1],MUT[2]);doc.text(label,M,y);doc.setFont("helvetica","bold");doc.setTextColor(INK[0],INK[1],INK[2]);doc.text(String(val),M+CW,y,{align:"right"});y+=3;doc.setDrawColor(238,232,221);doc.setLineWidth(0.15);doc.line(M,y,M+CW,y);y+=3.5;}
+
+    // En-tête
+    doc.setFont("times","normal");doc.setFontSize(20);doc.setTextColor(INK[0],INK[1],INK[2]);
+    doc.text("Étude de transmission patrimoniale",M,y+2);
+    doc.setFont("times","italic");doc.setFontSize(15);doc.setTextColor(GREEN[0],GREEN[1],GREEN[2]);
+    doc.text("Patrimy",M+CW,y-1,{align:"right"});
+    doc.setFont("helvetica","normal");doc.setFontSize(8.5);doc.setTextColor(MUT[0],MUT[1],MUT[2]);
+    var now=new Date().toLocaleDateString("fr-FR",{day:"2-digit",month:"long",year:"numeric"});
+    doc.text(now,M+CW,y+4,{align:"right"});
+    y+=8;doc.setDrawColor(GREEN[0],GREEN[1],GREEN[2]);doc.setLineWidth(0.6);doc.line(M,y,M+CW,y);y+=8;
+
+    // Profil
+    sectionTitle("Profil du client");
+    var statutLbl={marie:"Marié",pacs:"Pacsé",celib:"Célibataire",veuf:"Veuf"}[d.statut]||d.statut;
+    var regimeLbl={legale:"Communauté réduite aux acquêts",separation:"Séparation de biens",universelle:"Communauté universelle",participation:"Participation aux acquêts"}[d.regime]||"—";
+    kv("Statut conjugal",statutLbl);
+    if(d.marie)kv("Régime matrimonial",regimeLbl);
+    kv("Âge du client",d.age+" ans");
+    if(d.marie)kv("Âge du conjoint",d.ageConj+" ans");
+    kv("Enfants communs",d.enfComm);
+    if(d.enfAutre>0)kv("Enfants d'une autre union",d.enfAutre);
+    y+=2;
+
+    // Patrimoine
+    sectionTitle("Patrimoine & dispositifs");
+    kv("Résidence principale",eurPdf(d.rp));
+    kv("Immobilier locatif / secondaire",eurPdf(d.immoLoc));
+    kv("Liquidités",eurPdf(d.cash));
+    kv("Valeurs mobilières",eurPdf(d.vm));
+    if(d.entreprise>0)kv("Entreprise détenue",eurPdf(d.entreprise));
+    if(d.dettes>0)kv("Dettes / passif","- "+eurPdf(d.dettes));
+    if(d.avAvant>0)kv("Assurance vie (avant 70 ans)",eurPdf(d.avAvant));
+    if(d.avApres>0)kv("Assurance vie (après 70 ans)",eurPdf(d.avApres));
+    if(d.per>0){var perLbl=(d.perType==="bancaire")?"PER bancaire":"PER assurantiel ("+(d.perAge==="avant70"?"décès av. 70":"décès ap. 70")+")";kv(perLbl,eurPdf(d.per));}
+    if(d.dejaDon>0)kv("Donations déjà réalisées / enfant",eurPdf(d.dejaDon));
+    y+=2;
+
+    // Estimation
+    sectionTitle("Estimation");
+    kv("Patrimoine net du foyer",eurPdf(d.patrimoineFoyer));
+    kv("Masse successorale du client",eurPdf(d.masse));
+    if(d.marie&&d.partConjoint>0)kv("Part conjoint (exonérée)","- "+eurPdf(d.partConjoint));
+    kv("Abattement disponible / enfant",eurPdf(d.abatDispo));
+    if(d.perBancaire>0)kv("Dont PER bancaire (succession)",eurPdf(d.perBancaire));
+    if(d.droitsAV>0)kv("Dont droits AV / PER assurantiel",eurPdf(d.droitsAV));
+    y+=3;
+
+    // Total
+    need(16);
+    doc.setFillColor(SOFT[0],SOFT[1],SOFT[2]);doc.roundedRect(M,y,CW,14,2,2,"F");
+    doc.setFont("helvetica","bold");doc.setFontSize(9.5);doc.setTextColor(DARK[0],DARK[1],DARK[2]);
+    doc.text("Droits de succession estimés au décès du client",M+5,y+8.5);
+    doc.setFont("times","normal");doc.setFontSize(17);
+    doc.text(eurPdf(d.totalDroits),M+CW-5,y+9.5,{align:"right"});
+    y+=20;
+
+    // Recommandations
+    sectionTitle("Prochaines étapes recommandées");
+    if(d.top&&d.top.length){
+      d.top.forEach(function(r,i){
+        var head=(i===0?"Priorité — ":"Piste 2 — ")+r.t;
+        doc.setFont("helvetica","bold");doc.setFontSize(10);
+        var headLines=doc.splitTextToSize(head,CW-6);
+        doc.setFont("helvetica","normal");doc.setFontSize(9);
+        var pLines=doc.splitTextToSize(r.p,CW-6);
+        var hasGain=(r.gain&&r.gain>500)?1:0;
+        var blockH=headLines.length*5+pLines.length*4+hasGain*5+6;
+        need(blockH);
+        doc.setFillColor(GOLD[0],GOLD[1],GOLD[2]);doc.rect(M,y-1,1.2,blockH-3,"F");
+        var tx=M+5;
+        doc.setFont("helvetica","bold");doc.setFontSize(10);doc.setTextColor(INK[0],INK[1],INK[2]);
+        doc.text(headLines,tx,y+3);y+=headLines.length*5+1;
+        doc.setFont("helvetica","normal");doc.setFontSize(9);doc.setTextColor(MUT[0],MUT[1],MUT[2]);
+        doc.text(pLines,tx,y+1);y+=pLines.length*4;
+        if(hasGain){doc.setFont("helvetica","bold");doc.setTextColor(GREEN[0],GREEN[1],GREEN[2]);doc.text("Économie estimée : "+eurPdf(r.gain),tx,y+4);y+=5;}
+        y+=4;
+      });
+    }else{
+      doc.setFont("helvetica","normal");doc.setFontSize(9);doc.setTextColor(MUT[0],MUT[1],MUT[2]);
+      doc.text("Aucune optimisation prioritaire détectée.",M,y);y+=6;
+    }
+
+    // Disclaimer
+    need(22);y+=4;doc.setDrawColor(231,224,211);doc.setLineWidth(0.2);doc.line(M,y,M+CW,y);y+=4;
+    doc.setFont("helvetica","italic");doc.setFontSize(7.5);doc.setTextColor(MUT[0],MUT[1],MUT[2]);
+    var disc="Estimation indicative en ligne directe basée sur les abattements et barèmes en vigueur. Certaines règles sont simplifiées (répartition propre/commun forfaitisée à 50%, droits du conjoint, plus-values latentes). Document de travail à valider par une étude complète et l'avis d'un notaire avant toute décision.";
+    doc.text(doc.splitTextToSize(disc,CW),M,y);
+
+    // Livraison adaptée au contexte.
+    // Dans une iframe (embed Notion), le téléchargement direct est bloqué par le bac à sable :
+    // on ouvre alors le PDF dans un nouvel onglet, d'où il peut être enregistré/imprimé.
+    var inIframe;
+    try{ inIframe = (window.self !== window.top); }catch(e){ inIframe = true; }
+    if(inIframe){
+      try{
+        var url = URL.createObjectURL(doc.output("blob"));
+        var win = window.open(url,"_blank");
+        if(!win){ doc.save("etude-transmission-patrimoniale.pdf"); }
+      }catch(e){
+        try{ doc.save("etude-transmission-patrimoniale.pdf"); }
+        catch(e2){ alert("Ouvrez le simulateur en plein écran (icône ↗ en haut à droite de l'embed) pour récupérer le PDF."); }
+      }
+    } else {
+      doc.save("etude-transmission-patrimoniale.pdf");
+    }
+  }
+
+  // ---------- UI bindings ----------
+  function bindSeg(segId,key,after){
+    var seg=$(segId);
+    seg.querySelectorAll("button").forEach(function(b){
+      b.addEventListener("click",function(){
+        seg.querySelectorAll("button").forEach(function(x){x.classList.remove("active")});
+        b.classList.add("active");state[key]=b.dataset.v;
+        if(after)after();compute();
+      });
+    });
+  }
+
+  function refreshStatutUI(){
+    var marie=(state.statut==="marie"||state.statut==="pacs");
+    $("card-regime").classList.toggle("hidden", state.statut!=="marie");
+    $("f-age-conj").classList.toggle("hidden", !marie && state.statut!=="veuf");
+  }
+  function refreshRegimeUI(){
+    $("f-attribution").classList.toggle("hidden", state.regime!=="universelle");
+  }
+  function refreshPerUI(){
+    $("f-per-age").classList.toggle("hidden", state.perType!=="assurantiel");
+  }
+
+  bindSeg("seg-statut","statut",refreshStatutUI);
+  bindSeg("seg-regime","regime",refreshRegimeUI);
+  bindSeg("seg-per-type","perType",refreshPerUI);
+  bindSeg("seg-per-age","perAge");
+
+  // recompute on every input
+  document.querySelectorAll("input").forEach(function(el){
+    el.addEventListener("input",compute);
+    el.addEventListener("change",compute);
+  });
+
+  refreshStatutUI();refreshRegimeUI();refreshPerUI();compute();
+
+  $("pdf-btn").addEventListener("click",generatePDF);
+})();
+</script>
+</body>
+</html>
